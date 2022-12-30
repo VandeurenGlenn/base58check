@@ -1,0 +1,28 @@
+{
+  "name": "base58check",
+  "version": "1.1.0",
+  "description": "",
+  "type": "module",
+  "exports": {
+    ".": "./base58check.js"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "base58check",
+    "base-x"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@rollup/plugin-typescript": "^10.0.1",
+    "rollup": "^3.9.0",
+    "tslib": "^2.4.1"
+  },
+  "dependencies": {
+    "@leofcoin/crypto": "^0.2.1",
+    "@vandeurenglenn/base58": "^1.1.6"
+  }
+}
