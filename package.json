@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@leofcoin/crypto": "^0.2.1",
-    "@vandeurenglenn/base58": "^1.1.6"
+    "@vandeurenglenn/base58": "^1.1.6",
+    "@vandeurenglenn/typed-array-concat": "^1.0.2"
   }
 }

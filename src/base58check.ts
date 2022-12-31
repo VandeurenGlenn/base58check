@@ -1,36 +1,43 @@
 import base58 from '@vandeurenglenn/base58'
-import {createHash} from '@leofcoin/crypto'
+import {createDoubleHash} from '@leofcoin/crypto'
+import typedArrayConcat from '@vandeurenglenn/typed-array-concat'
 
-export const encode = async (source: Uint8Array, prefix = new TextEncoder().encode('00')):Promise<base58String> => {
+const concatAndDoubleHash = async (input: Uint8Array[]) => {
+  return new Uint8Array(
+    await createDoubleHash(
+      typedArrayConcat(input), 'SHA-256'
+    )
+  )
+}
+
+export const encode = async (source: Uint8Array, prefix = new TextEncoder().encode('00'), hex?: boolean):Promise<base58String> => {
   if (!(source instanceof Uint8Array) || !(prefix instanceof Uint8Array)) {
     throw new TypeError('Expected Uint8Array');
   }
-  let uint8Array = new Uint8Array(prefix.length + source.length)
-  uint8Array.set(prefix)
-  uint8Array.set(source, prefix.length)
   
-  let hash = await createHash(uint8Array, 'SHA-256')
-  hash = await createHash(new Uint8Array(hash), 'SHA-256')
-  
-  const slice = new Uint8Array(hash).subarray(0, 4)
+  const hash = await concatAndDoubleHash([
+    prefix,
+    source
+  ])
 
-  uint8Array = new Uint8Array(prefix.length + source.length + slice.length)
-  uint8Array.set(prefix)
-  uint8Array.set(source, prefix.length)
-  uint8Array.set(slice, source.length + prefix.length)
+  const uint8Array = typedArrayConcat([
+    prefix,
+    source,
+    hash.subarray(0, 4)
+  ])
 
+  if (hex) return base58.encodeHex(uint8Array)
   return base58.encode(uint8Array)
 }
-export const decode = async (string: base58String) => {
-  let uint8Array = base58.decode(string)
+export const decode = async (string: base58String, hex?: boolean) => {
+  let uint8Array = hex ? base58.decodeHex(string) : base58.decode(string)
   const prefix = uint8Array.subarray(0, 2)
   const source = uint8Array.subarray(2, -4)
 
-  let hash = new Uint8Array(prefix.length + source.length)
-  hash.set(prefix)
-  hash.set(source, prefix.length)
-  hash = new Uint8Array(await createHash(hash, 'SHA-256'))
-  hash = new Uint8Array(await createHash(hash, 'SHA-256'))
+  const hash = await concatAndDoubleHash([
+    prefix,
+    source
+  ])
 
   let index = 0
   const slice = uint8Array.subarray(-4)
@@ -43,13 +50,19 @@ export const decode = async (string: base58String) => {
   return { prefix, data: source}
 }
 
-export const isBase58check = (string: base58String): boolean => {
+export const isBase58check = (string: base58String, hex?: boolean): boolean => {
   try {
-    decode(string)
+    hex ? decode(string, true) : decode(string)
     return true
   } catch (e) {
     return false
   }
 }
 
-export default { encode, decode, isBase58check }
+export const encodeHex = (uint8Array: Uint8Array, prefix= new TextEncoder().encode('00')) => encode(uint8Array, prefix, true)
+
+export const decodeHex = (string: base58HexString) => decode(string, true)
+
+export const isBase58checkHex = (string: base58HexString): boolean => isBase58check(string, true)
+
+export default { encode, decode, encodeHex, decodeHex, isBase58check, isBase58checkHex }
